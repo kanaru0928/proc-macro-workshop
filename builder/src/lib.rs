@@ -17,7 +17,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
     else {
         panic!("Only struct can be applied");
     };
-    
+
     let fields = named.iter().map(|f| {
         let ident = &f.ident;
         let ty = &f.ty;
@@ -25,7 +25,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
             #ident: Option<#ty>
         }
     });
-    
+
     let fields_init = named.iter().map(|f| {
         let ident = &f.ident;
         quote! {
@@ -33,11 +33,26 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
     });
 
+    let builder_impl = named.iter().map(|f| {
+        let ident = &f.ident;
+        let ty = &f.ty;
+        quote! {
+            fn #ident(&mut self, #ident: #ty) -> &mut Self {
+                self.#ident = Some(#ident);
+                self
+            }
+        }
+    });
+
     let expanded = quote! {
         pub struct #builder_ident {
             #(#fields,)*
         }
-        
+
+        impl #builder_ident {
+            #(#builder_impl)*
+        }
+
         impl #ident {
             pub fn builder() -> #builder_ident {
                 #builder_ident {
